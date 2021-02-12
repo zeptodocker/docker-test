@@ -1,36 +1,71 @@
-node {
-    def app
-
-    stage('Clone repository') {
-        /* Let's make sure we have the repository cloned to our workspace */
-
-        checkout scm
+ipeline { 
+2
+    environment { 
+3
+        registry = "kamrantabassum/docker-images" 
+4
+        registryCredential = 'dockerhub_id' 
+5
+        dockerImage = '' 
+6
     }
-
-    stage('Build image') {
-        /* This builds the actual image; synonymous to
-         * docker build on the command line */
-
-        app = docker.build("getintodevops/hellonode")
-    }
-
-    stage('Test image') {
-        /* Ideally, we would run a test framework against our image.
-         * For this example, we're using a Volkswagen-type approach ;-) */
-
-        app.inside {
-            sh 'echo "Tests passed"'
+7
+    agent any 
+8
+    stages { 
+9
+        stage('Cloning our Git') { 
+10
+            steps { 
+11
+                git 'https://github.com/zeptodocker/docker-test.git' 
+12
+            }
+13
+        } 
+14
+        stage('Building our image') { 
+15
+            steps { 
+16
+                script { 
+17
+                    dockerImage = docker.build registry + ":$BUILD_NUMBER" 
+18
+                }
+19
+            } 
+20
         }
+21
+        stage('Deploy our image') { 
+22
+            steps { 
+23
+                script { 
+24
+                    docker.withRegistry( '', registryCredential ) { 
+25
+                        dockerImage.push() 
+26
+                    }
+27
+                } 
+28
+            }
+29
+        } 
+30
+        stage('Cleaning up') { 
+31
+            steps { 
+32
+                sh "docker rmi $registry:$BUILD_NUMBER" 
+33
+            }
+34
+        } 
+35
     }
-
-    stage('Push image') {
-        /* Finally, we'll push the image with two tags:
-         * First, the incremental build number from Jenkins
-         * Second, the 'latest' tag.
-         * Pushing multiple tags is cheap, as all the layers are reused. */
-        docker.withRegistry('https://registry.hub.docker.com', 'kamrantabassum') {
-            app.push("${env.BUILD_NUMBER}")
-            app.push("latest")
-        }
-    }
+36
 }
