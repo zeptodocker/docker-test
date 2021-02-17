@@ -12,11 +12,6 @@ ARG MAVEN_VERSION=3.5.4
 # Changing user to root to install maven
 USER root
 
-# Install required tools
-# which: otherwise 'mvn version' prints '/usr/share/maven/bin/mvn: line 93: which: command not found'
-RUN yum update -y && \
-  yum install -y which && \
-  yum clean all
 
 # Maven
 RUN curl -fsSL https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - -C /usr/share \
